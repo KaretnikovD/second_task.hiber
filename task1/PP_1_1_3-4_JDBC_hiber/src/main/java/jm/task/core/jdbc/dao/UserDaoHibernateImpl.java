@@ -20,7 +20,7 @@ public class UserDaoHibernateImpl implements UserDao {
         Transaction transaction = null;
         try (Session session = Util.getSessionFactory().openSession()) {
             transaction = session.beginTransaction();
-            String sql = "CREATE TABLE IF NOT EXISTS users(" + "ID BIGINT NOT NULL AUTO_INCREMENT, NAME VARCHAR(100), " + "LASTNAME VARCHAR(100), AGE INT, PRIMARY KEY (ID) )";
+            String sql = "CREATE TABLE IF NOT EXISTS users(" + "ID BIGINT NOT NULL AUTO_INCREMENT, NAME VARCHAR(100), " + "LASTNAME VARCHAR(100), AGE TINYINT, PRIMARY KEY (ID) )";
             session.createSQLQuery(sql).executeUpdate();
             transaction.commit();
         } catch (HibernateException e) {
@@ -63,18 +63,24 @@ public class UserDaoHibernateImpl implements UserDao {
     public void removeUserById(long id) {
         Transaction transaction = null;
         try (Session session = Util.getSessionFactory().openSession()) {
-            if (session.get(User.class, id) != null) {
-                transaction = session.beginTransaction();
-                User user = session.get(User.class, id);
-                session.delete(user);
-                session.getTransaction().commit();
+            transaction = session.beginTransaction();
+            int rowsAffected = session.createQuery("DELETE FROM User WHERE id = :id")
+                    .setParameter("id", id)
+                    .executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Успешное удаление пользователя с ID: " + id);
+            } else {
+                System.out.println("Пользователь с ID: " + id + " не найден.");
             }
+            transaction.commit();
         } catch (HibernateException e) {
             if (transaction != null) {
                 transaction.rollback();
             }
+            e.printStackTrace();
         }
     }
+
 
     @Override
     public List<User> getAllUsers() {
